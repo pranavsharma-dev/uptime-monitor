@@ -1,0 +1,39 @@
+services:
+
+    #postgre db
+    db:
+        # official postgre image
+        image: postgres:15
+
+        # env is how flask know the db password and 
+        # postgre know what database to create on startup
+        environment:
+            POSTGRES_DB: uptime
+            POSTGRES_USER: pranav
+            POSTGRES_PASSWORD: password
+
+        # persist data and run init.sql again on next use
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+        ports:
+            - "5432:5432"
+
+
+
+    # flask container
+    web:
+        #builds an image from the dockerfile in the current directory
+        build: .
+        ports:
+            - "5000:5000"
+        environment:
+            DATABASE_URL: postgresql://pranav:password@db:5432/uptime
+            API_KEY: supersecretkey
+        # the database starts before the flask app
+        depends_on:
+            - db
+
+volumes:
+    postgres_data:
