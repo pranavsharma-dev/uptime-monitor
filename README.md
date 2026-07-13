@@ -117,6 +117,7 @@ uptime-monitor/
 ├── init.sql                 # Schema DDL — auto-executed by Postgres on first boot
 ├── run.py                   # Entrypoint: starts the Flask dev server
 ├── Dockerfile               # python:3.11-slim image definition
+├── .dockerignore            # Excludes .env, venv/, tests/, etc. from the build context
 ├── docker-compose.yml       # `web` and `db` service definitions
 ├── requirements.txt         # Pinned dependencies
 ├── .env.example             # Template for required environment variables
@@ -462,15 +463,9 @@ The GitHub Actions workflow is defined in [`.github/workflows/ci.yml`](.github/w
 4. `pip install -r requirements.txt` installs all pinned dependencies
 5. `pytest --cov=app` runs the full test suite against the live Postgres service container
 
-**Credentials:** database name, user, and password are read from GitHub repository secrets (`DB_NAME`, `DB_USER`, `DB_PASSWORD`) — never hardcoded in the workflow file. `DISABLE_SCHEDULER=1` is set as a job-level environment variable so the background scheduler does not start during the test run.
+**Credentials:** the Postgres service container uses fixed, non-sensitive credentials (`uptime_test` / `postgres` / `postgres`) scoped entirely to that ephemeral container, which exists only for the duration of the job and is discarded afterward. These are not application secrets — using GitHub repository secrets for a throwaway CI database would add configuration overhead (a step every fork would need to repeat) without protecting anything real, since the container never holds production data and isn't reachable outside the job. Real credentials (used by the deployed application) are always sourced from environment variables and are never present in the workflow file — see [Environment Variables](#environment-variables). `DISABLE_SCHEDULER=1` is set as a job-level environment variable so the background scheduler does not start during the test run.
 
-To configure CI for your fork, add the following repository secrets under **Settings → Secrets and variables → Actions**:
-
-| Secret | Example value |
-|---|---|
-| `DB_NAME` | `uptime_test` |
-| `DB_USER` | `postgres` |
-| `DB_PASSWORD` | `a-strong-random-password` |
+Because the workflow requires no repository configuration, CI runs successfully on forks and on this repository without any manual setup.
 
 ---
 
@@ -546,7 +541,7 @@ The `Dockerfile` uses `python:3.11-slim` as the base image. Dependencies are ins
 
 **SQL injection:** All database queries use parameterized statements (`cursor.execute(sql, (values,))`). User input is never interpolated into query strings. This is enforced consistently across `app/middleware.py`, `app/routes/monitors.py`, and `app/scheduler.py`.
 
-**Secret management:** Database credentials and the database password are never hardcoded. They are read exclusively from environment variables at runtime. The `.env` file is listed in `.gitignore`. CI credentials are stored as GitHub repository secrets and injected into the workflow environment at run time.
+**Secret management:** Application database credentials are never hardcoded. They are read exclusively from environment variables at runtime. The `.env` file is listed in `.gitignore`, and `.dockerignore` prevents it from ever being copied into a built image. CI uses fixed, non-sensitive credentials scoped to a disposable, job-scoped Postgres container — not a stand-in for how the deployed application is configured.
 
 **API key generation:** Keys are generated with `secrets.token_hex(32)`, which produces 32 bytes of cryptographically random data represented as a 64-character hex string. The `secrets` module uses the operating system's CSPRNG (`os.urandom`), making the keys resistant to prediction or brute-force enumeration.
 

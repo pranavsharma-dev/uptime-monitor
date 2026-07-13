@@ -7,17 +7,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    # These are throwaway credentials for an ephemeral Postgres container that
+    # lives only for the duration of this job — not a real secret. Hardcoding
+    # them (rather than requiring repo secrets) keeps CI green out of the box,
+    # including on forks and PRs from contributors who can't see this repo's
+    # secrets.
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: uptime_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{ secrets.DB_USER }}"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -25,9 +30,9 @@ jobs:
     env:
       DB_HOST: localhost
       DB_PORT: 5432
-      DB_NAME: ${{ secrets.DB_NAME }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: uptime_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
       DISABLE_SCHEDULER: "1"
 
     steps:
