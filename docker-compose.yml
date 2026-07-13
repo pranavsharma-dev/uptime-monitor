@@ -1,0 +1,34 @@
+services:
+
+  # Postgres database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  # Flask app
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    # depends_on only orders container startup; it does not wait for
+    # Postgres to be ready to accept connections. app/db.py's retry loop
+    # in get_connection() handles that gap.
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
