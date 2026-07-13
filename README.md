@@ -354,7 +354,7 @@ check_all_monitors()
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/uptime-monitor.git
+git clone https://github.com/pranavsharma-dev/uptime-monitor.git
 cd uptime-monitor
 
 # 2. Create your environment file
