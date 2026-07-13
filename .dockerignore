@@ -1,0 +1,26 @@
+# Secrets — never bake credentials into the image
+.env
+.env.*
+
+# Virtual environments
+venv/
+.venv/
+
+# Version control
+.git/
+.gitignore
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Tests and coverage — not needed in the production image
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# CI and editor config
+.github/
+.vscode/
